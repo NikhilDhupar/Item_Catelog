@@ -1,0 +1,14 @@
+<html>
+
+<body>
+    <h1>Creating new book in {{category.name}} </h1>
+    <form action="{{ url_for('addbook',c_id=category.id) }}" method='POST'>
+        <p>Name of Book:<input type='text' placeholder='Book Name' name='name' size='30'></p>
+        <p>Price: <input type='text' placeholder='Price' name='price' size='30'></p>
+        <p>Author: <input type='text' placeholder='Author' name='author' size='30'></p>
+        <p>Description: <input type='text' placeholder='Add Description' name='description' size='30'></p>
+        <input type='submit' , value='ADD'>
+    </form>
+</body>
+
+</html>
