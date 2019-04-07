@@ -1,0 +1,18 @@
+<html>
+    <body>
+        <h1>Edit Book</h1>
+        <form action="{{url_for('editbook',c_id=c_id,b_id=item.id)}}" method="POST">
+            <p>Name:</p>
+		        <input type ='text' size='30' name='name' placeholder = '{{item.name }}'>
+	        <p>Description:</p>
+		        <input type ='text' size='30' name='description' placeholder = '{{item.description}}'>
+	        <p>Price:</p>
+                <input type ='text' size='30' name='price' placeholder = '{{item.price}}'>
+                <p>Author:</p>
+                <input type ='text' size='30' name='author' placeholder = '{{item.author}}'>
+            <br><br>
+            <input type="submit" value="EDIT">
+        </form>
+        <a href="{{url_for('viewbook',c_id=c_id,b_id=item.id)}}">Cancel</a>
+    </body>
+</html>

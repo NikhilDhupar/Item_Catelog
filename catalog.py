@@ -49,9 +49,38 @@ def addbook(c_id):
     else:
         return render_template('newbook.html',category=category)
 
+@app.route('/bookstore/<int:c_id>/delbook/<int:b_id>', methods=['GET', 'POST'])
+def deletebook(c_id,b_id):
+    item=session.query(Book).filter_by(id=b_id).one()
+    if(request.method=='POST'):
+        session.delete(item)
+        session.commit()
+        return redirect(url_for('DisplayCategory',c_id=c_id))
+    else:
+        return render_template('deletebook.html',c_id=c_id,item=item)
 
-@app.route('/bookstore/<int:c_id>/delbook/<int:b_id>')
+@app.route('/bookstore/<int:c_id>/vbook/<int:b_id>', methods=['GET', 'POST'])
+def viewbook(c_id,b_id):
+    item=session.query(Book).filter_by(id=b_id).one()
+    return render_template('viewbook.html',book=item,c_id=c_id)
 
+@app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/edit', methods=['GET', 'POST'])
+def editbook(c_id,b_id):
+    editedItem=session.query(Book).filter_by(id=b_id).one()
+    if(request.method=='POST'):
+        if request.form['name']:
+            editedItem.name = request.form['name']
+        if request.form['description']:
+            editedItem.description = request.form['name']
+        if request.form['price']:
+            editedItem.price = request.form['price']
+        if request.form['author']:
+            editedItem.author = request.form['author']
+        session.add(editedItem)
+        session.commit()
+        return redirect(url_for('viewbook',c_id=c_id,b_id=b_id))
+    else:
+        return render_template('editbook.html',c_id=c_id,item=editedItem)
 
 @app.route('/bookstore/delcategory/<int:c_id>', methods=['GET', 'POST'])
 def deletecategory(c_id):

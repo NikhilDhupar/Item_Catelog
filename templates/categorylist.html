@@ -6,7 +6,7 @@
     {% for i in list %}
 
     <div>
-        <p>Name is - {{i.name}}</p>
+        <p>Name is - <a href="{{ url_for('DisplayCategory',c_id=i.id)}}">{{i.name}}</p>
         <a href="{{ url_for('deletecategory',c_id=i.id)}}">Delete</a>
     </div>
 

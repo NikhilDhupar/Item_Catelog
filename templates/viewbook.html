@@ -1,0 +1,18 @@
+<html>
+    <body>
+        <div>
+            <h2>Name - {{book.name}}</h2>
+        </div>
+        <div>
+            <h3>Author - {{book.author}}</h3>
+        </div>
+        <div>
+            <h3>Price - {{book.price}}</h3>
+        </div>
+        <div>
+            <h4>Description - {{book.dewscription}}</h4>
+        </div>
+        <br>
+        <a href="{{ url_for('editbook',c_id=c_id,b_id=book.id)}}">Edit</a>
+    </body>
+</html>

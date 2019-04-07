@@ -6,7 +6,8 @@
     {% for i in list %}
 
     <div>
-        <p>Name is - {{i.name}}</p>
+        <p>Name is - <a href="{{url_for('viewbook',c_id=category.id,b_id=i.id)}}">{{i.name}}</a></p>
+        <a href="{{ url_for('deletebook',c_id=category.id,b_id=i.id)}}">Delete</a>
     </div>
 
     {% endfor %}
