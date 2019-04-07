@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Python code for project item catalog
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Category, Book
@@ -19,12 +19,21 @@ def Hellobookstore():
     categorylist = session.query(Category).all()
     return render_template('categorylist.html', list=categorylist)
 
+@app.route('/bookstore/JSON/')
+def categoryjson():
+    items=session.query(Category).all()
+    return jsonify(Categorylist=[i.serialize for i in items])
 
 @app.route('/bookstore/<int:c_id>/')
 def DisplayCategory(c_id):
     category = session.query(Category).filter_by(id=c_id).one()
     booklist = session.query(Book).filter_by(category_id=c_id)
     return render_template('displaybooks.html', category=category, list=booklist)
+
+@app.route('/bookstore/<int:c_id>/JSON/')
+def booklist(c_id):
+    books = session.query(Book).filter_by(category_id=c_id)
+    return jsonify(Bookslist=[i.serialize for i in books])
 
 @app.route('/bookstore/addcategory/', methods=['GET', 'POST'])
 def addcategory():
@@ -63,6 +72,11 @@ def deletebook(c_id,b_id):
 def viewbook(c_id,b_id):
     item=session.query(Book).filter_by(id=b_id).one()
     return render_template('viewbook.html',book=item,c_id=c_id)
+
+@app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/JSON/')
+def bookjson(c_id,b_id):    
+    item=session.query(Book).filter_by(id=b_id).one()
+    return jsonify(Book=item.serialize)
 
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/edit', methods=['GET', 'POST'])
 def editbook(c_id,b_id):

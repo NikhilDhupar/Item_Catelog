@@ -12,6 +12,12 @@ class Category(Base):
     __tablename__ = 'category'
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=True)
+    @property
+    def serialize(self):
+        return {
+            'name': self.name,
+            'id': self.id,
+        }
 
 
 class Book(Base):
@@ -24,6 +30,16 @@ class Book(Base):
     category_id = Column(Integer, ForeignKey('category.id'))
     category = relationship(Category)
 
+    @property
+    def serialize(self):
+        return {
+            'name': self.name,
+            'author': self.author,
+            'description': self.description,
+            'id': self.id,
+            'price': self.price,
+            'category_id': self.category_id,
+        }
 
 engine = create_engine('sqlite:///bookstore.db')
 Base.metadata.create_all(engine)
