@@ -18,7 +18,7 @@ class Book(Base):
     __tablename__ = 'book'
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=True)
-    description = Column(String(250))
+    description = Column(String(550))
     author = Column(String(100), nullable=False)
     price = Column(String(8), nullable=False)
     category_id = Column(Integer, ForeignKey('category.id'))
