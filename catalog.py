@@ -3,7 +3,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response, flash
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database_setup import Base, Category, Book
+from database_setup import Base, Category, Book, User
 from flask import session as login_session
 import random, string, httplib2, requests, json
 from oauth2client.client import flow_from_clientsecrets
@@ -52,6 +52,8 @@ def booklist(c_id):
 
 @app.route('/bookstore/addcategory/', methods=['GET', 'POST'])
 def addcategory():
+    if not login_session['access_token']:
+        return redirect(url_for('showLogin')) 
     if request.method == 'POST':
         newcategory = Category(name=request.form['name'])
         session.add(newcategory)
@@ -63,6 +65,8 @@ def addcategory():
 
 @app.route('/bookstore/<int:c_id>/addbook/', methods=['GET', 'POST'])
 def addbook(c_id):
+    if not login_session['access_token']:
+        return redirect(url_for('showLogin'))
     category = session.query(Category).filter_by(id=c_id).one()
     if request.method == 'POST':
         print("Inside post of addbook")
@@ -75,6 +79,8 @@ def addbook(c_id):
 
 @app.route('/bookstore/<int:c_id>/delbook/<int:b_id>', methods=['GET', 'POST'])
 def deletebook(c_id,b_id):
+    if not login_session['access_token']:
+        return redirect(url_for('showLogin'))
     item=session.query(Book).filter_by(id=b_id).one()
     if(request.method=='POST'):
         session.delete(item)
@@ -95,6 +101,8 @@ def bookjson(c_id,b_id):
 
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/edit', methods=['GET', 'POST'])
 def editbook(c_id,b_id):
+    if not login_session['access_token']:
+        return redirect(url_for('showLogin'))
     editedItem=session.query(Book).filter_by(id=b_id).one()
     if(request.method=='POST'):
         if request.form['name']:
@@ -113,6 +121,8 @@ def editbook(c_id,b_id):
 
 @app.route('/bookstore/delcategory/<int:c_id>', methods=['GET', 'POST'])
 def deletecategory(c_id):
+    if not login_session['access_token']:
+        return redirect(url_for('showLogin'))
     item = session.query(Category).filter_by(id=c_id).one()
     if request.method == 'POST':
         session.delete(item)
@@ -147,7 +157,7 @@ def gconnect():
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
            % access_token)
     h = httplib2.Http()
-    result = json.loads(h.request(url, 'GET')[1])
+    result = json.loads((h.request(url, 'GET')[1]).decode())
     # If there was an error in the access token info, abort.
     if result.get('error') is not None:
         response = make_response(json.dumps(result.get('error')), 500)
@@ -197,37 +207,37 @@ def gconnect():
     output += '<h1>Welcome, '
     output += login_session['username']
     output += '!</h1>'
-    output += '<img src="'
-    output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
+    # output += '<img src="'
+    # output += login_session['picture']
+    # output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    # flash("you are now logged in as %s" % login_session['username'])
     print ("done!")
     return output
 
 @app.route('/gdisconnect')
 def gdisconnect():
-    access_token = login_session['access_token']
-    print ('In gdisconnect access token is %s', access_token)
-    print ('User name is: ' )
-    print (login_session['username'])
-    if access_token is None:
-
+    if login_session['access_token']:
+        access_token = login_session['access_token']
+    else:
     	response = make_response(json.dumps('Current user not connected.'), 401)
     	response.headers['Content-Type'] = 'application/json'
     	return response
+    print ('In gdisconnect access token is %s', access_token)
+    print ('User name is: ' )
+    print (login_session['username'])
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
     print ('result is ')
     print (result)
-    if(result['status']=='200'):
-	#del login_session['access_token'] 
-    	del login_session['gplus_id']
-    	del login_session['username']
-    	del login_session['email']
-    	del login_session['picture']
-        del login_session['access_token']
-        return redirect('Hellobookstore')
+    if result['status'] == '200':
+        login_session['access_token']=None
+        del login_session['gplus_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+        #del login_session['access_token']
+        return redirect(url_for('Hellobookstore'))
     else:
     	response = make_response(json.dumps('Failed to revoke token for given user.', 400))
     	response.headers['Content-Type'] = 'application/json'
@@ -238,3 +248,5 @@ if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.debug = True
     app.run(host='0.0.0.0', port=8000)
+
+
