@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 # Python code for project item catalog
-from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response, flash
+from flask import Flask, render_template, request, redirect
+from flask import url_for, jsonify, make_response, flash
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Category, Book, User
 from flask import session as login_session
-import random, string, httplib2, requests, json
+import random
+import string
+import httplib2
+import requests
+import json
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 
-CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
+CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())[
+    'web']['client_id']
 
 engine = create_engine('sqlite:///bookstore.db')
 Base.metadata.bind = engine
@@ -26,8 +32,9 @@ def Hellobookstore():
     if 'username' not in login_session:
         return render_template('publiccategorylist.html', list=categorylist)
     else:
-        #print(login_session['access_token'])
+        # print(login_session['access_token'])
         return render_template('categorylist.html', list=categorylist)
+
 
 @app.route('/login')
 def showLogin():
@@ -40,34 +47,39 @@ def showLogin():
 
 @app.route('/bookstore/JSON/')
 def categoryjson():
-    items=session.query(Category).all()
+    items = session.query(Category).all()
     return jsonify(Categorylist=[i.serialize for i in items])
+
 
 @app.route('/bookstore/<int:c_id>/')
 def DisplayCategory(c_id):
-    category = session.query(Category).filter_by(id=c_id).one()
-    booklist = session.query(Book).filter_by(category_id=c_id)
+    cat = session.query(Category).filter_by(id=c_id).one()
+    blist = session.query(Book).filter_by(category_id=c_id)
     if 'username' not in login_session:
-        return render_template('publicdisplaybooks.html', category=category, list=booklist)
+        return render_template('pdisplaybooks.html', category=cat, list=blist)
     else:
-        return render_template('displaybooks.html', category=category, list=booklist)
+        return render_template('displaybooks.html', category=cat, list=blist)
+
 
 @app.route('/bookstore/<int:c_id>/JSON/')
 def booklist(c_id):
     books = session.query(Book).filter_by(category_id=c_id)
     return jsonify(Bookslist=[i.serialize for i in books])
 
+
 @app.route('/bookstore/addcategory/', methods=['GET', 'POST'])
 def addcategory():
     if 'username' not in login_session:
-        return redirect(url_for('showLogin')) 
+        return redirect(url_for('showLogin'))
     if request.method == 'POST':
-        newcategory = Category(name=request.form['name'],user_id=login_session['user_id'])
+        newcategory = Category(
+            name=request.form['name'], user_id=login_session['user_id'])
         session.add(newcategory)
         session.commit()
         return redirect(url_for('Hellobookstore'))
     else:
         return render_template('newcategory.html')
+
 
 @app.route('/bookstore/<int:c_id>/addbook/', methods=['GET', 'POST'])
 def addbook(c_id):
@@ -76,48 +88,56 @@ def addbook(c_id):
     category = session.query(Category).filter_by(id=c_id).one()
     if request.method == 'POST':
         print("Inside post of addbook")
-        newbooks=Book(name=request.form['name'],price=request.form['price'],author=request.form['author'],description=request.form['description'],category_id=c_id,user_id=login_session['user_id'])
+        newbooks = Book(name=request.form['name'], price=request.form['price'],
+                        author=request.form['author'],
+                        description=request.form['description'],
+                        category_id=c_id,
+                        user_id=login_session['user_id'])
         session.add(newbooks)
         session.commit()
-        return redirect(url_for('DisplayCategory',c_id=c_id) )
+        return redirect(url_for('DisplayCategory', c_id=c_id))
     else:
-        return render_template('newbook.html',category=category)
+        return render_template('newbook.html', category=category)
+
 
 @app.route('/bookstore/<int:c_id>/delbook/<int:b_id>', methods=['GET', 'POST'])
-def deletebook(c_id,b_id):
+def deletebook(c_id, b_id):
     if 'username' not in login_session:
         return redirect(url_for('showLogin'))
-    item=session.query(Book).filter_by(id=b_id).one()
+    item = session.query(Book).filter_by(id=b_id).one()
     if item.user_id != login_session['user_id']:
         return "<script>{alert('Unauthorized');}</script>"
-    if(request.method=='POST'):
+    if(request.method == 'POST'):
         session.delete(item)
         session.commit()
-        return redirect(url_for('DisplayCategory',c_id=c_id))
+        return redirect(url_for('DisplayCategory', c_id=c_id))
     else:
-        return render_template('deletebook.html',c_id=c_id,item=item)
+        return render_template('deletebook.html', c_id=c_id, item=item)
+
 
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>', methods=['GET', 'POST'])
-def viewbook(c_id,b_id):
-    item=session.query(Book).filter_by(id=b_id).one()
+def viewbook(c_id, b_id):
+    item = session.query(Book).filter_by(id=b_id).one()
     if 'username' not in login_session:
-        return render_template('publicviewbook.html',book=item,c_id=c_id)
+        return render_template('publicviewbook.html', book=item, c_id=c_id)
     else:
-        return render_template('viewbook.html',book=item,c_id=c_id)
+        return render_template('viewbook.html', book=item, c_id=c_id)
+
 
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/JSON/')
-def bookjson(c_id,b_id):    
-    item=session.query(Book).filter_by(id=b_id).one()
+def bookjson(c_id, b_id):
+    item = session.query(Book).filter_by(id=b_id).one()
     return jsonify(Book=item.serialize)
 
+
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/edit', methods=['GET', 'POST'])
-def editbook(c_id,b_id):
+def editbook(c_id, b_id):
     if 'username' not in login_session:
         return redirect(url_for('showLogin'))
-    editedItem=session.query(Book).filter_by(id=b_id).one()
+    editedItem = session.query(Book).filter_by(id=b_id).one()
     if editedItem.user_id != login_session['user_id']:
         return "<script>{alert('Unauthorized');}</script>"
-    if(request.method=='POST'):
+    if(request.method == 'POST'):
         if request.form['name']:
             editedItem.name = request.form['name']
         if request.form['description']:
@@ -128,9 +148,10 @@ def editbook(c_id,b_id):
             editedItem.author = request.form['author']
         session.add(editedItem)
         session.commit()
-        return redirect(url_for('viewbook',c_id=c_id,b_id=b_id))
+        return redirect(url_for('viewbook', c_id=c_id, b_id=b_id))
     else:
-        return render_template('editbook.html',c_id=c_id,item=editedItem)
+        return render_template('editbook.html', c_id=c_id, item=editedItem)
+
 
 @app.route('/bookstore/delcategory/<int:c_id>', methods=['GET', 'POST'])
 def deletecategory(c_id):
@@ -145,6 +166,7 @@ def deletecategory(c_id):
         return redirect(url_for('Hellobookstore'))
     else:
         return render_template('deletecategory.html', category=item)
+
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -191,14 +213,14 @@ def gconnect():
     if result['issued_to'] != CLIENT_ID:
         response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
-        print ("Token's client ID does not match app's.")
+        print("Token's client ID does not match app's.")
         response.headers['Content-Type'] = 'application/json'
         return response
 
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
+        response = make_response(json.dumps('User is already connected.'),
                                  200)
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -228,12 +250,10 @@ def gconnect():
     output += '<h1>Welcome, '
     output += login_session['username']
     output += '!</h1>'
-    # output += '<img src="'
-    # output += login_session['picture']
-    # output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
     # flash("you are now logged in as %s" % login_session['username'])
-    print ("done!")
+    print("done!")
     return output
+
 
 def createUser(login_session):
     newUser = User(name=login_session['username'], email=login_session[
@@ -256,34 +276,36 @@ def getUserID(email):
     except:
         return None
 
+
 @app.route('/logout')
 def gdisconnect():
-    if login_session['access_token']:
+    if 'username' in login_session:
         access_token = login_session['access_token']
     else:
-    	response = make_response(json.dumps('Current user not connected.'), 401)
-    	response.headers['Content-Type'] = 'application/json'
-    	return response
-    print ('In gdisconnect access token is %s', access_token)
-    print ('User name is: ' )
-    print (login_session['username'])
+        response = make_response(json.dumps(
+            'Current user not connected.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    print('In gdisconnect access token is %s', access_token)
+    print('User name is: ')
+    print(login_session['username'])
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
-    print ('result is ')
-    print (result)
+    print('result is ')
+    print(result)
     if result['status'] == '200':
         del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
         del login_session['email']
         del login_session['picture']
-        #del login_session['access_token']
         return redirect(url_for('Hellobookstore'))
     else:
-    	response = make_response(json.dumps('Failed to revoke token for given user.', 400))
-    	response.headers['Content-Type'] = 'application/json'
-    	return response
+        response = make_response(json.dumps(
+            'Failed to revoke token for given user.', 400))
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 
 if __name__ == '__main__':
