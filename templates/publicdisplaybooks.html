@@ -1,0 +1,15 @@
+<html>
+
+<body>
+    <h1> Available Books of {{category.name}} are: </h1>
+
+    {% for i in list %}
+
+    <div>
+        <p>Name is - <a href="{{url_for('viewbook',c_id=category.id,b_id=i.id)}}">{{i.name}}</a></p>
+    </div>
+
+    {% endfor %}
+</body>
+
+</html>

@@ -7,12 +7,9 @@
 
     <div>
         <p>Name is - <a href="{{ url_for('DisplayCategory',c_id=i.id)}}">{{i.name}}</a></p>
-        <a href="{{ url_for('deletecategory',c_id=i.id)}}">Delete</a>
     </div>
 
     {% endfor %}
-    <br><br>
-    <a href="{{url_for('addcategory')}}">Add Category</a>
 </body>
 
 </html>
