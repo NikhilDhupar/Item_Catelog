@@ -56,6 +56,7 @@ def categoryjson():
     items = session.query(Category).all()
     return jsonify(Categorylist=[i.serialize for i in items])
 
+
 # Display list all all categories
 @app.route('/bookstore/<int:c_id>/')
 def DisplayCategory(c_id):
@@ -66,11 +67,13 @@ def DisplayCategory(c_id):
     else:
         return render_template('displaybooks.html', category=cat, list=blist)
 
+
 # JSON endpoint to get list of books in this category
 @app.route('/bookstore/<int:c_id>/JSON/')
 def booklist(c_id):
     books = session.query(Book).filter_by(category_id=c_id)
     return jsonify(Bookslist=[i.serialize for i in books])
+
 
 # Adding category
 @app.route('/bookstore/addcategory/', methods=['GET', 'POST'])
@@ -85,6 +88,7 @@ def addcategory():
         return redirect(url_for('Hellobookstore'))
     else:
         return render_template('newcategory.html')
+
 
 # Adding book
 @app.route('/bookstore/<int:c_id>/addbook/', methods=['GET', 'POST'])
@@ -105,6 +109,7 @@ def addbook(c_id):
     else:
         return render_template('newbook.html', category=category)
 
+
 # Delete book
 @app.route('/bookstore/<int:c_id>/delbook/<int:b_id>', methods=['GET', 'POST'])
 def deletebook(c_id, b_id):
@@ -120,6 +125,7 @@ def deletebook(c_id, b_id):
     else:
         return render_template('deletebook.html', c_id=c_id, item=item)
 
+
 # View Book
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>', methods=['GET', 'POST'])
 def viewbook(c_id, b_id):
@@ -129,11 +135,13 @@ def viewbook(c_id, b_id):
     else:
         return render_template('viewbook.html', book=item, c_id=c_id)
 
+
 # JSON endpoint to get details of a single book
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/JSON/')
 def bookjson(c_id, b_id):
     item = session.query(Book).filter_by(id=b_id).one()
     return jsonify(Book=item.serialize)
+
 
 # Edit book
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/edit', methods=['GET', 'POST'])
@@ -158,6 +166,7 @@ def editbook(c_id, b_id):
     else:
         return render_template('editbook.html', c_id=c_id, item=editedItem)
 
+
 # Deleting category
 @app.route('/bookstore/delcategory/<int:c_id>', methods=['GET', 'POST'])
 def deletecategory(c_id):
@@ -172,6 +181,7 @@ def deletecategory(c_id):
         return redirect(url_for('Hellobookstore'))
     else:
         return render_template('deletecategory.html', category=item)
+
 
 # Google Connect
 @app.route('/gconnect', methods=['POST'])
@@ -281,6 +291,7 @@ def getUserID(email):
         return user.id
     except:
         return None
+
 
 # logging out
 @app.route('/logout')
