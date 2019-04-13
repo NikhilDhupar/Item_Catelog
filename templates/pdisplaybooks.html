@@ -5,12 +5,12 @@
 </head>
 
 <body>
-    <h1> Available Category of books are </h1>
+    <h1> Available Books of {{category.name}} are: </h1>
 
     {% for i in list %}
 
     <div class="displaylist">
-        <p><a href="{{ url_for('DisplayCategory',c_id=i.id)}}">{{i.name}}</a></p>
+        <p><a href="{{url_for('viewbook',c_id=category.id,b_id=i.id)}}">{{i.name}}</a></p>
     </div>
     <br>
     {% endfor %}
