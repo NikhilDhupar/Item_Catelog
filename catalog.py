@@ -23,7 +23,11 @@ app = Flask(__name__)
 @app.route('/bookstore/')
 def Hellobookstore():
     categorylist = session.query(Category).all()
-    return render_template('categorylist.html', list=categorylist)
+    if 'username' not in login_session:
+        return render_template('publiccategorylist.html', list=categorylist)
+    else:
+        #print(login_session['access_token'])
+        return render_template('categorylist.html', list=categorylist)
 
 @app.route('/login')
 def showLogin():
@@ -43,7 +47,10 @@ def categoryjson():
 def DisplayCategory(c_id):
     category = session.query(Category).filter_by(id=c_id).one()
     booklist = session.query(Book).filter_by(category_id=c_id)
-    return render_template('displaybooks.html', category=category, list=booklist)
+    if 'username' not in login_session:
+        return render_template('publicdisplaybooks.html', category=category, list=booklist)
+    else:
+        return render_template('displaybooks.html', category=category, list=booklist)
 
 @app.route('/bookstore/<int:c_id>/JSON/')
 def booklist(c_id):
@@ -52,25 +59,24 @@ def booklist(c_id):
 
 @app.route('/bookstore/addcategory/', methods=['GET', 'POST'])
 def addcategory():
-    if not login_session['access_token']:
+    if 'username' not in login_session:
         return redirect(url_for('showLogin')) 
     if request.method == 'POST':
-        newcategory = Category(name=request.form['name'])
+        newcategory = Category(name=request.form['name'],user_id=login_session['user_id'])
         session.add(newcategory)
         session.commit()
         return redirect(url_for('Hellobookstore'))
-
     else:
         return render_template('newcategory.html')
 
 @app.route('/bookstore/<int:c_id>/addbook/', methods=['GET', 'POST'])
 def addbook(c_id):
-    if not login_session['access_token']:
+    if 'username' not in login_session:
         return redirect(url_for('showLogin'))
     category = session.query(Category).filter_by(id=c_id).one()
     if request.method == 'POST':
         print("Inside post of addbook")
-        newbooks=Book(name=request.form['name'],price=request.form['price'],author=request.form['author'],description=request.form['description'],category_id=c_id)
+        newbooks=Book(name=request.form['name'],price=request.form['price'],author=request.form['author'],description=request.form['description'],category_id=c_id,user_id=login_session['user_id'])
         session.add(newbooks)
         session.commit()
         return redirect(url_for('DisplayCategory',c_id=c_id) )
@@ -79,9 +85,11 @@ def addbook(c_id):
 
 @app.route('/bookstore/<int:c_id>/delbook/<int:b_id>', methods=['GET', 'POST'])
 def deletebook(c_id,b_id):
-    if not login_session['access_token']:
+    if 'username' not in login_session:
         return redirect(url_for('showLogin'))
     item=session.query(Book).filter_by(id=b_id).one()
+    if item.user_id != login_session['user_id']:
+        return "<script>{alert('Unauthorized');}</script>"
     if(request.method=='POST'):
         session.delete(item)
         session.commit()
@@ -92,7 +100,10 @@ def deletebook(c_id,b_id):
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>', methods=['GET', 'POST'])
 def viewbook(c_id,b_id):
     item=session.query(Book).filter_by(id=b_id).one()
-    return render_template('viewbook.html',book=item,c_id=c_id)
+    if 'username' not in login_session:
+        return render_template('publicviewbook.html',book=item,c_id=c_id)
+    else:
+        return render_template('viewbook.html',book=item,c_id=c_id)
 
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/JSON/')
 def bookjson(c_id,b_id):    
@@ -101,9 +112,11 @@ def bookjson(c_id,b_id):
 
 @app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/edit', methods=['GET', 'POST'])
 def editbook(c_id,b_id):
-    if not login_session['access_token']:
+    if 'username' not in login_session:
         return redirect(url_for('showLogin'))
     editedItem=session.query(Book).filter_by(id=b_id).one()
+    if editedItem.user_id != login_session['user_id']:
+        return "<script>{alert('Unauthorized');}</script>"
     if(request.method=='POST'):
         if request.form['name']:
             editedItem.name = request.form['name']
@@ -121,9 +134,11 @@ def editbook(c_id,b_id):
 
 @app.route('/bookstore/delcategory/<int:c_id>', methods=['GET', 'POST'])
 def deletecategory(c_id):
-    if not login_session['access_token']:
+    if 'username' not in login_session:
         return redirect(url_for('showLogin'))
     item = session.query(Category).filter_by(id=c_id).one()
+    if item.user_id != login_session['user_id']:
+        return "<script>{alert('Unauthorized');}</script>"
     if request.method == 'POST':
         session.delete(item)
         session.commit()
@@ -203,6 +218,12 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
+# see if user exists, if it doesn't make a new one
+    user_id = getUserID(data["email"])
+    if not user_id:
+        user_id = createUser(login_session)
+    login_session['user_id'] = user_id
+
     output = ''
     output += '<h1>Welcome, '
     output += login_session['username']
@@ -214,7 +235,28 @@ def gconnect():
     print ("done!")
     return output
 
-@app.route('/gdisconnect')
+def createUser(login_session):
+    newUser = User(name=login_session['username'], email=login_session[
+                   'email'], picture=login_session['picture'])
+    session.add(newUser)
+    session.commit()
+    user = session.query(User).filter_by(email=login_session['email']).one()
+    return user.id
+
+
+def getUserInfo(user_id):
+    user = session.query(User).filter_by(id=user_id).one()
+    return user
+
+
+def getUserID(email):
+    try:
+        user = session.query(User).filter_by(email=email).one()
+        return user.id
+    except:
+        return None
+
+@app.route('/logout')
 def gdisconnect():
     if login_session['access_token']:
         access_token = login_session['access_token']
@@ -231,7 +273,7 @@ def gdisconnect():
     print ('result is ')
     print (result)
     if result['status'] == '200':
-        login_session['access_token']=None
+        del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
         del login_session['email']
@@ -248,5 +290,3 @@ if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.debug = True
     app.run(host='0.0.0.0', port=8000)
-
-
