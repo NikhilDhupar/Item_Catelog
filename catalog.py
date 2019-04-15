@@ -15,11 +15,11 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 
 # Google client_id
-CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())[
+CLIENT_ID = json.loads(open('/var/www/FlaskApp/Item_Catelog/client_secrets.json', 'r').read())[
     'web']['client_id']
 
 # Connect to database
-engine = create_engine('sqlite:///bookstore.db')
+engine = create_engine('postgresql://nikhil:admin123@localhost/nikhil')
 Base.metadata.bind = engine
 
 # Create session
@@ -144,7 +144,8 @@ def bookjson(c_id, b_id):
 
 
 # Edit book
-@app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/edit', methods=['GET', 'POST'])
+@app.route('/bookstore/<int:c_id>/vbook/<int:b_id>/edit',
+            methods=['GET', 'POST'])
 def editbook(c_id, b_id):
     if 'username' not in login_session:
         return redirect(url_for('showLogin'))
@@ -196,7 +197,7 @@ def gconnect():
 
     try:
         # Upgrade the authorization code into a credentials object
-        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
+        oauth_flow = flow_from_clientsecrets('/var/www/FlaskApp/Item_Catelog/client_secrets.json', scope='')
         oauth_flow.redirect_uri = 'postmessage'
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
@@ -306,7 +307,8 @@ def gdisconnect():
     print('In gdisconnect access token is %s', access_token)
     print('User name is: ')
     print(login_session['username'])
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+    url = ('https://accounts.google.com/o/oauth2/revoke?token=%s'
+             % access_token)
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
     print('result is ')
@@ -328,4 +330,4 @@ def gdisconnect():
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.debug = True
-    app.run(host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=8000, threaded=False)
